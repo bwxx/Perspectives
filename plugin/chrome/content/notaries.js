@@ -996,9 +996,26 @@ var Perspectives = {
 
   		// this is the main function we key off of.  It seems to work well, even though
   		// the docs do not explicitly say when it will be called.
-  		onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
+		onSecurityChange: function(aWebProgress, aRequest, aState) {
+			const Ci = Components.interfaces;
 			var uri = null;
 			try{
+				if ((aRequest === null) || (!aRequest instanceof Ci.nsIChannel)) {
+					// only nsIChannel has a nsITransportSecurityInfo (securityInfo) property
+					Pers_debug.d_print("main", "Security change but not of type nsIChannel. Returning.");
+					return;
+				}
+
+				if (typeof aWebProgress.securityInfo === "undefined")
+				{
+					Pers_debug.d_print("main", "Security change with no securityInfo. Returning.");
+					return;
+				}
+
+				if (!aWebProgress.securityInfo instanceof Ci.nsITransportSecurityInfo) {
+					Pers_debug.d_print("main", "Channel.securityInfo is not an instance of nsITransportSecurityInfo. Returning.");
+					return;
+				}
 				uri = window.gBrowser.currentURI;
 				Pers_debug.d_print("main", "Security change " + uri.spec);
 				Perspectives.recentSSLStatus = aWebProgress.securityInfo.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
